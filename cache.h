@@ -17,11 +17,17 @@ private:
     Type type;
     int ivalue;
     double dvalue;
-    struct Node* next;
+    struct Node *pre, *next;
   };
   
-  Node *head;
+  Node *linkedList;
   int size;
+
+  void insertNode(std::string key, int value);
+  void insertNode(std::string key, double value);
+  bool removeNode(std::string key);
+  void removeTail();
+  Node* findNode(std::string key);
 
 public:
   Cache();
