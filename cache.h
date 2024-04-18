@@ -20,7 +20,7 @@ private:
     struct Node* next;
   };
   
-  Node *head, *tail;
+  Node *head;
   int size;
 
 public:

@@ -18,50 +18,102 @@ Cache::~Cache()
         delete p;
     }
 
-    head = tail = nullptr;
+    head = nullptr;
     size = 0;
 }
 
 // int를 cache에 추가한다
 void Cache::add(std::string key, int value) {
-    if(size == CACHE_SIZE) {
+    if(size == 1 && head->key.compare(key) == 0) {
+        head->type = INT;
+        head->ivalue = value;
         return;
     }
-    size++;
+    Node *pre = nullptr, *cur = head;
+    bool isDelete = false;
+    while(cur != nullptr) {
+        if(cur->key.compare(key) == 0) {
+            Node *p = cur;
+            if(pre == nullptr) {
+                head = head->next;
+            } else if(cur->next == nullptr) {
+                pre->next = nullptr;
+            }
+            delete p;
+            isDelete = true;
+            break;
+        }
+        pre = cur;
+        cur = cur->next;
+    }
+
+    if(size == CACHE_SIZE) {
+        Node *p = head;
+        head = head->next;
+        delete p;
+    } else if(!isDelete) {
+        size++;
+    }
+
     Cache::Node *node = new Cache::Node;
     node->key = key;
     node->type = INT;
     node->ivalue = value;
 
     if(head == nullptr) {
-        head = tail = node;
-        node->next = nullptr;
+        head = node;
         return;
     }
-    tail->next = node;
-    node->next = nullptr;
-    tail = tail->next;
+    Node *p;
+    for(p = head; p->next != nullptr; p = p->next);
+    p->next = node;
 }
 
 // double을 cache에 추가한다
 void Cache::add(std::string key, double value) {
-    if(size == CACHE_SIZE) {
+    if(size == 1 && head->key.compare(key) == 0) {
+        head->type = DOUBLE;
+        head->dvalue = value;
         return;
     }
-    size++;
+    Node *pre = nullptr, *cur = head;
+    bool isDelete = false;
+    while(cur != nullptr) {
+        if(cur->key.compare(key) == 0) {
+            Node *p = cur;
+            if(pre == nullptr) {
+                head = head->next;
+            } else if(cur->next == nullptr) {
+                pre->next = nullptr;
+            }
+            delete p;
+            isDelete = true;
+            break;
+        }
+        pre = cur;
+        cur = cur->next;
+    }
+
+    if(size == CACHE_SIZE) {
+        Node *p = head;
+        head = head->next;
+        delete p;
+    } else if(!isDelete) {
+        size++;
+    }
+
     Cache::Node *node = new Cache::Node;
     node->key = key;
     node->type = DOUBLE;
     node->dvalue = value;
 
     if(head == nullptr) {
-        head = tail = node;
-        node->next = nullptr;
+        head = node;
         return;
     }
-    tail->next = node;
-    node->next = nullptr;
-    tail = tail->next;
+    Node *p;
+    for(p = head; p->next != nullptr; p = p->next);
+    p->next = node;
 }
 
 // key에 해당하는 value를 cache에서 가져온다
@@ -69,7 +121,7 @@ void Cache::add(std::string key, double value) {
 bool Cache::get(std::string key, int &value) {
     Node *cur = head;
     while(cur != nullptr) {
-        if(cur->key == key && cur->type == Type::INT) {
+        if(cur->key == key && cur->type == INT) {
             value = cur->ivalue;
             return true;
         }
@@ -83,7 +135,7 @@ bool Cache::get(std::string key, int &value) {
 bool Cache::get(std::string key, double &value) {
     Node *cur = head;
     while(cur != nullptr) {
-        if(cur->key == key && cur->type == Type::DOUBLE) {
+        if(cur->key == key && cur->type == DOUBLE) {
             value = cur->dvalue;
             return true;
         }
@@ -97,23 +149,35 @@ bool Cache::get(std::string key, double &value) {
 // [key1: value1] -> [key2: value2] -> ... -> [keyN: valueN]
 std::string Cache::toString() {
     std::string result;
+    
+    if(head != nullptr) {
+        result.append("(");
+        result.append(head->key);
+        result.append(": ");
+        if(head->type == INT) {
+            result.append(std::to_string(head->ivalue));
+        } else if(head->type == DOUBLE) {
+            result.append(std::to_string(head->dvalue));
+        }
+        result.append(") ");
+    }
+
     Node *cur = head;
-    while(true) {
-            result.append("[");
-            result.append(cur->key);
-            result.append(": ");
-        if(cur->type == Type::INT) {
+    while(cur != nullptr) {
+        result.append("[");
+        result.append(cur->key);
+        result.append(": ");
+        if(cur->type == INT) {
             result.append(std::to_string(cur->ivalue));
-        } else if(cur->type == Type::DOUBLE) {
+        } else if(cur->type == DOUBLE) {
             result.append(std::to_string(cur->dvalue));
         }
         result.append("]");
         cur = cur->next;
         if(cur != nullptr) {
             result.append(" -> ");
-        } else {
-            break;
         }
     }
+
     return result;
 }
