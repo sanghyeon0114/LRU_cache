@@ -10,6 +10,19 @@ private:
   // TODO: private inner struct/class 선언 가능
   // TODO: private 멤버 변수와 함수 추가 가능
 
+  enum Type {INT, DOUBLE};
+
+  struct Node {
+    std::string key;
+    Type type;
+    int ivalue;
+    double dvalue;
+    struct Node* next;
+  };
+  
+  Node *head, *tail;
+  int size;
+
 public:
   Cache();
   ~Cache();

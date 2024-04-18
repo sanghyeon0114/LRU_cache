@@ -1,3 +1,7 @@
 .vscode
 
 resources
+
+*.o
+
+main
