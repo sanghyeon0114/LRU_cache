@@ -27,6 +27,7 @@ void Cache::insertNode(std::string key, int value) {
     newNode->type = INT;
     newNode->ivalue = value;
     size++;
+    Cache::hashTable.addHashNode(newNode);
     if(linkedList == nullptr) {
         linkedList = newNode;
         newNode->pre = nullptr;
@@ -45,6 +46,7 @@ void Cache::insertNode(std::string key, double value) {
     newNode->type = DOUBLE;
     newNode->dvalue = value;
     size++;
+    Cache::hashTable.addHashNode(newNode);
     if(linkedList == nullptr) {
         linkedList = newNode;
         newNode->pre = nullptr;
@@ -57,10 +59,24 @@ void Cache::insertNode(std::string key, double value) {
     linkedList = newNode;
 }
 
-bool Cache::removeNode(std::string key) {
+void Cache::insertNode(Cache::Node* newNode) {
+    size++;
+    if(linkedList == nullptr) {
+        linkedList = newNode;
+        newNode->pre = nullptr;
+        newNode->next = nullptr;
+        return;
+    }
+    linkedList->pre = newNode;
+    newNode->pre = nullptr;
+    newNode->next = linkedList;
+    linkedList = newNode;
+}
+
+Cache::Node* Cache::removeNode(std::string key) {
     Node* p = Cache::findNode(key);
     if(p == nullptr) {
-        return false;
+        return nullptr;
     }
     size--;
     if(p->pre == nullptr) {
@@ -78,8 +94,7 @@ bool Cache::removeNode(std::string key) {
             p->next->pre = p->pre;
         }
     }
-    delete p;
-    return true;
+    return p;
 }
 
 void Cache::removeTail() {
@@ -94,35 +109,35 @@ void Cache::removeTail() {
     } else {
         p->pre->next = nullptr;
     }
+    Cache::hashTable.removeHashNode(p);
     delete p;
     size--;
 }
 
 Cache::Node* Cache::findNode(std::string key) {
-    if(linkedList == nullptr) {
-        return nullptr;
-    }
-    Node* p = linkedList;
-    while(p != nullptr) {
-        if(p->key.compare(key) == 0) {
-            return p;
-        }
-        p = p->next;
-    }
-    return nullptr;
+    Cache::Node* p = hashTable.getHashNode(key);
+    return p;
 }
 
 void Cache::add(std::string key, int value) {
-    Cache::removeNode(key);
-    insertNode(key, value);
+    Cache::Node* p = Cache::removeNode(key);
+    if(p == nullptr) {
+        insertNode(key, value);
+    } else {
+        insertNode(p);
+    }
     while(size > CACHE_SIZE) {
         Cache::removeTail();
     }
 }
 
 void Cache::add(std::string key, double value) {
-    Cache::removeNode(key);
-    insertNode(key, value);
+    Cache::Node* p = Cache::removeNode(key);
+    if(p == nullptr) {
+        insertNode(key, value);
+    } else {
+        insertNode(p);
+    }
     while(size > CACHE_SIZE) {
         Cache::removeTail();
     }
@@ -169,3 +184,97 @@ std::string Cache::toString() {
     result.append("\n");
     return result;
 }
+
+// Enhanced Start.
+Cache::HashTable::HashTable() {
+    for(int i = 0; i < HASH_SIZE; i++) {
+        hashNode[i] = nullptr;
+    }
+}
+
+Cache::HashTable::~HashTable() {
+    for(int i = 0; i < HASH_SIZE; i++) {
+        HashNode *hp = hashNode[i];
+        while(hp != nullptr) {
+            HashNode *cur = hp;
+            hp = hp->next;
+            delete cur;
+        }
+    }
+}
+
+int Cache::HashTable::hashFunction(std::string key) {
+    int sum = 0;
+    for(int i = 0; i < key.length(); i++) {
+        sum += key[i];
+    }
+    return sum % HASH_SIZE;
+}
+
+Cache::HashTable::HashNode* Cache::HashTable::newHashNode(Node* node) {
+    HashNode* hp = new HashNode;
+    hp->node = node;
+    hp->next = nullptr;
+
+    return hp;
+}
+
+Cache::Node* Cache::HashTable::getHashNode(std::string key) {
+    int index = Cache::HashTable::hashFunction(key);
+    HashNode* hp = hashNode[index];
+    while(hp != nullptr) {
+        if(hp->node != nullptr && hp->node->key.compare(key) == 0) {
+            return hp->node;
+        }
+        hp = hp->next;
+    }
+
+    return nullptr;
+}
+
+void Cache::HashTable::addHashNode(Node* node) {
+    if(node == nullptr) {
+        return;
+    }
+
+    int index = Cache::HashTable::hashFunction(node->key);
+    if(hashNode[index] == nullptr) {
+        hashNode[index] = newHashNode(node);
+    } else {
+        HashNode* hp;
+        for(hp = hashNode[index]; hp->next != nullptr; hp = hp->next);
+        hp->next = newHashNode(node);
+    }
+}
+
+void Cache::HashTable::removeHashNode(Node* node) {
+    if(node == nullptr) {
+        return;
+    }
+
+    int index = Cache::HashTable::hashFunction(node->key);
+    HashNode *pre = nullptr, *hp = hashNode[index];
+    while(hp != nullptr) {
+        if(hp->node != nullptr && hp->node->key.compare(node->key) == 0) {
+            if(pre == nullptr) {
+                if(hp->next == nullptr) {
+                    hashNode[index] = nullptr;
+                } else {
+                    hashNode[index] = hp->next;
+                }
+                delete hp;
+            } else {
+                if(hp->next == nullptr) {
+                    pre->next = nullptr;
+                } else {
+                    pre->next = hp->next;
+                }
+                delete hp;
+            }
+            return;
+        }
+        pre = hp;
+        hp = hp->next;
+    }
+}
+// Enhanced End.

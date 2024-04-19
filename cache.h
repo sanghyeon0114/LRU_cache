@@ -17,7 +17,7 @@ private:
     Type type;
     int ivalue;
     double dvalue;
-    struct Node *pre, *next;
+    Node *pre, *next;
   };
   
   Node *linkedList;
@@ -25,9 +25,33 @@ private:
 
   void insertNode(std::string key, int value);
   void insertNode(std::string key, double value);
-  bool removeNode(std::string key);
+  void insertNode(Cache::Node* newNode);
+  Cache::Node* removeNode(std::string key);
   void removeTail();
-  Node* findNode(std::string key);
+  Node* findNode(std::string key); // Enhanced: hashTable 적용힘.
+  
+  // Enhanced Start.
+  #define HASH_SIZE 10
+  class HashTable {
+    private:
+      struct HashNode {
+        Node* node;
+        HashNode* next; // Chaining
+      };
+      HashNode* hashNode[HASH_SIZE];
+
+      int hashFunction(std::string key);
+      HashNode* newHashNode(Node* node);
+    public:
+      HashTable();
+      ~HashTable();
+      Node* getHashNode(std::string key);
+      void addHashNode(Node* node);
+      void removeHashNode(Node* node);
+  };
+
+  HashTable hashTable;
+  // Enhanced End.
 
 public:
   Cache();
